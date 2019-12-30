@@ -7,6 +7,15 @@ rect_over = False
 refPt = []
 
 
+def sketch_transform(image):
+    image_grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    image_grayscale_blurred = cv2.GaussianBlur(image_grayscale, (7, 7), 0)
+    image_canny = cv2.Canny(image_grayscale_blurred, 10, 80)
+    _, mask = image_canny_inverted = cv2.threshold(
+        image_canny, 30, 255, cv2.THRESH_BINARY_INV)
+    return mask
+
+
 def on_mouse(event, x, y, flags, params):
     # обработка событий мышки, для выделения областей
 
@@ -84,6 +93,21 @@ while(cap.isOpened()):
         for rect_x in refPt:
             cv2.rectangle(
                 frame, (rect_x[0], rect_x[1]), (rect_x[2], rect_x[3]), (255, 0, 255), 2)
+
+            # rect_img = frame[rect_x[0]: rect_x[1], rect_x[2]: rect_x[3]]
+            # sketcher_rect = cv2.cvtColor(rect_img, cv2.COLOR_BGR2GRAY)
+            # frame[rect_x[0]: rect_x[1], rect_x[2]: rect_x[3]] = sketcher_rect
+            # r = cv2.rectangle(
+            #     frame, (rect_x[0], rect_x[1]), (rect_x[2], rect_x[3]), (255, 0, 0), 2)
+
+            rect_img = frame[rect_x[1]: rect_x[3], rect_x[0]: rect_x[2]]
+            sketcher_rect = rect_img
+            sketcher_rect = sketch_transform(sketcher_rect)
+            sketcher_rect_rgb = cv2.cvtColor(sketcher_rect, cv2.COLOR_GRAY2RGB)
+
+            frame[rect_x[1]: rect_x[3], rect_x[0]: rect_x[2]] = sketcher_rect_rgb
+
+            # cv2.imshow('image', rect_img)
 
     cv2.imshow('frame', frame)
 
