@@ -1,116 +1,111 @@
-import numpy as np
 import cv2
-
-rect = (0, 0, 0, 0)
-rectangle = False
-rect_over = False
-refPt = []
+import numpy as np
 
 
-def sketch_transform(image):
-    image_grayscale = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    image_grayscale_blurred = cv2.GaussianBlur(image_grayscale, (7, 7), 0)
-    image_canny = cv2.Canny(image_grayscale_blurred, 10, 80)
-    _, mask = image_canny_inverted = cv2.threshold(
-        image_canny, 30, 255, cv2.THRESH_BINARY_INV)
-    return mask
+def add_pts_to_array(params, x, y):
+    global rects
+    rect = (params["top_left_pt"], params["bottom_right_pt"])
+    rects.append(rect)
 
 
-def on_mouse(event, x, y, flags, params):
-    # обработка событий мышки, для выделения областей
+def update_pts(params, x, y):
+    global x_init, y_init
+    params["top_left_pt"] = (min(x_init, x), min(y_init, y))
+    params["bottom_right_pt"] = (max(x_init, x), max(y_init, y))
+    # img[y_init:y, x_init:x] = 255 - img[y_init:y, x_init:x]
 
-    global rect, rectangle, rect_over, refPt, cropping
 
+def draw_rectangles(event, x, y, flags, params):
+    global x_init, y_init, drawing
+    # First click initialize the init rectangle point
     if event == cv2.EVENT_LBUTTONDOWN:
-        rect = (x, y, 0, 0)
-        rectangle = True
-
+        drawing = True
+        x_init, y_init = x, y
+    # Meanwhile mouse button is pressed, update diagonal rectangle point
+    elif event == cv2.EVENT_MOUSEMOVE and drawing:
+        update_pts(params, x, y)
+    # Once mouse botton is release
     elif event == cv2.EVENT_LBUTTONUP:
-        rect = (rect[0], rect[1], x, y)
-        rectangle = False
-        rect_over = True
-        refPt.append(rect)
-
-    elif event == cv2.EVENT_MOUSEMOVE:
-        if rectangle == True:
-            rect = (rect[0], rect[1], x, y)
+        drawing = False
+        update_pts(params, x, y)
+        add_pts_to_array(params, x, y)
 
 
-# cap = cv2.VideoCapture('video.avi')
-cap = cv2.VideoCapture(0)
+if __name__ == '__main__':
 
-waitTime = 50
+    waitTime = 50
 
-# читаем первый фрейм видеопотока
-(grabbed, frame) = cap.read()
+    drawing = False
+    event_params = {"top_left_pt": (-1, -1), "bottom_right_pt": (-1, -1)}
 
-# проименуем окно id окна
-cv2.namedWindow('frame')
-# навесили обработчик на клики мышки на окошкос id='frame'
-cv2.setMouseCallback('frame', on_mouse)
+    rects = []
 
-while(cap.isOpened()):
+    cap = cv2.VideoCapture(0)
 
-    key = cv2.waitKey(waitTime)
+    # Check if the webcam is opened correctly
+    if not cap.isOpened():
+        raise IOError("Cannot open webcam")
 
-    if key == 27:  # ESC
-        break
+    cv2.namedWindow('Webcam')
+    # Bind draw_rectangles function to every mouse event
+    cv2.setMouseCallback('Webcam', draw_rectangles, event_params)
 
-    # сохраняем настройки
-    if key == ord("r"):  # обнуляем массив областей
-        rectangle = False
-        rect_over = False
-        refPt = []
-        rect = (0, 0, 0, 0)
+    while True:
+        ret, frame = cap.read()
+        # img = cv2.resize(frame, None, fx=0.5, fy=0.5,
+        #                  interpolation=cv2.INTER_AREA)
 
-    elif key == ord("s"):  # сохраняем массив областей в файле
-        refPt_np = np.array(refPt, np.int32)
-        np.savetxt('setting_roi.txt', refPt_np)
+        img = cv2.resize(frame, None, fx=1, fy=1,
+                         interpolation=cv2.INTER_AREA)
 
-    elif key == ord("l"):  # загружаем из файла массив областей
-        refPt_np = np.loadtxt('setting_roi.txt', np.int32)
-        refPt = []
-        if refPt_np.shape == (4,):
-            rect = (refPt_np[0], refPt_np[1], refPt_np[2], refPt_np[3])
-            refPt.append(rect)
-        else:
-            for rect_x in refPt_np:
-                rect = (rect_x[0], rect_x[1], rect_x[2], rect_x[3])
-                refPt.append(rect)
-        rectangle = False
-        rect_over = True
+        # рисуем текущую область
+        if drawing:
+            (x0, y0), (x1,
+                       y1) = event_params["top_left_pt"], event_params["bottom_right_pt"]
+            img[y0:y1, x0:x1] = 255 - img[y0:y1, x0:x1]
 
-    ################################################################################
-    ##
+        # отрисовка областей которые запомнили в массив
+        for rect_x in rects:
+            (x0, y0), (x1, y1) = (
+                rect_x[0][0], rect_x[0][1]), (rect_x[1][0], rect_x[1][1])
+            img[y0:y1, x0:x1] = 255 - img[y0:y1, x0:x1]
 
-    (grabbed, frame) = cap.read()
+        cv2.imshow('Webcam', img)
+        c = cv2.waitKey(waitTime)
 
-    if rectangle:
-        cv2.rectangle(frame, (rect[0], rect[1]),
-                      (rect[2], rect[3]), (255, 0, 255), 2)
+        if c == 27:
+            break
 
-    if rect_over:
-        for rect_x in refPt:
-            cv2.rectangle(
-                frame, (rect_x[0], rect_x[1]), (rect_x[2], rect_x[3]), (255, 0, 255), 2)
+        elif c == ord("r"):  # обнуляем массив областей
+            rects = []
+            event_params = {
+                "top_left_pt": (-1, -1), "bottom_right_pt": (-1, -1)}
+            drawing = False
 
-            # rect_img = frame[rect_x[0]: rect_x[1], rect_x[2]: rect_x[3]]
-            # sketcher_rect = cv2.cvtColor(rect_img, cv2.COLOR_BGR2GRAY)
-            # frame[rect_x[0]: rect_x[1], rect_x[2]: rect_x[3]] = sketcher_rect
-            # r = cv2.rectangle(
-            #     frame, (rect_x[0], rect_x[1]), (rect_x[2], rect_x[3]), (255, 0, 0), 2)
+        elif c == ord("s"):  # сохраняем массив областей в файле
+            rects_np = np.array(rects, np.int32)
+            np.save('setting_roi.bin', rects_np)
 
-            rect_img = frame[rect_x[1]: rect_x[3], rect_x[0]: rect_x[2]]
-            sketcher_rect = rect_img
-            sketcher_rect = sketch_transform(sketcher_rect)
-            sketcher_rect_rgb = cv2.cvtColor(sketcher_rect, cv2.COLOR_GRAY2RGB)
+        elif c == ord("l"):  # загружаем из файла массив областей
+            rects_np = np.load('setting_roi.bin.npy')
+            rects = []
 
-            frame[rect_x[1]: rect_x[3], rect_x[0]: rect_x[2]] = sketcher_rect_rgb
+            for rect_x in rects_np:
+                (x0, y0), (x1, y1) = (
+                    rect_x[0][0], rect_x[0][1]), (rect_x[1][0], rect_x[1][1])
 
-            # cv2.imshow('image', rect_img)
+                event_params = {
+                    "top_left_pt": (x0, y0), "bottom_right_pt": (x1, y1)}
 
-    cv2.imshow('frame', frame)
+                rect = (event_params["top_left_pt"],
+                        event_params["bottom_right_pt"])
+                rects.append(rect)
 
+                drawing = False
+                event_params = {
+                    "top_left_pt": (-1, -1), "bottom_right_pt": (-1, -1)}
 
-cap.release()
-cv2.destroyAllWindows()
+                cv2.setMouseCallback('Webcam', draw_rectangles, event_params)
+
+    cap.release()
+    cv2.destroyAllWindows()
