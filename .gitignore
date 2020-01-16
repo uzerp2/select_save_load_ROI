@@ -2,4 +2,6 @@ setting_roi.txt
 setting_roi.bin
 .vscode
 *.weights
-pytorch-yolo-v3
+pytorch-yolo-v3/cfg/*
+pytorch-yolo-v3/weights/*
+pytorch-yolo-v3/__pycache__/*
