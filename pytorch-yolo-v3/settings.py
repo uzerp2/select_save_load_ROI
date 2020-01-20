@@ -8,10 +8,10 @@ NUMBER_OF_PEOPLE_THAT_QUEUE_IS = 3
 TIME_THAT_QUEUE_IS = 15                          # секунды
 
 # почта для отправки
-SENDER_EMAIL = 'pavel.semin.USA@gmail.com'
-SENDER_NAME = 'pasha_semin_sender'
+SENDER_EMAIL = 'xxx@gmail.com'
+SENDER_NAME = 'xxx_sender'
 PASSWORD = 'xxx'
 
 
-RECEIVER_EMAILS = ['uzerp2apple@gmail.com']
-RECEIVER_NAMES = ['pasha_semin_receiver']
+RECEIVER_EMAILS = ['yyy@gmail.com']
+RECEIVER_NAMES = ['yyy_receiver']
