@@ -16,8 +16,7 @@ import pickle as pkl
 from settings import *
 
 from send_email import send_mail
-
-# from send_email import send_mail
+import asyncio
 
 
 def get_test_input(input_dim, CUDA):
@@ -275,7 +274,8 @@ if __name__ == '__main__':
 
                         # Email body
                         email_html = open('email.html')
-                        email_body = email_html.read()
+                        # email_body = email_html.read()
+                        email_body = 'hello'
 
                         filename = 'frame_temp{:n}.png'.format(index)
 

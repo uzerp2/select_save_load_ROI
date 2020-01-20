@@ -8,11 +8,21 @@ from email import encoders  # New line
 
 from settings import *
 
+from threading import Thread
 
+
+def threading(f):
+    def wrapper(*args, **kwargs):
+        thr = Thread(target=f, args=args, kwargs=kwargs)
+        thr.start()
+    return wrapper
+
+
+@threading
 def send_mail(sender_email, sender_name, password, receiver_emails, receiver_names, email_body, filename):
 
     for receiver_email, receiver_name in zip(receiver_emails, receiver_names):
-        print("Sending the email...")
+        print("Sending the email...\n")
         # Configurating user's info
         msg = MIMEMultipart()
         msg['To'] = formataddr((receiver_name, receiver_email))
@@ -82,8 +92,10 @@ if __name__ == '__main__':
     email_html = open('email.html')
     email_body = email_html.read()
 
-    # filename = './imgs/dog.jpg'
-    filename = 'document.pdf'
+    filename = './imgs/dog.jpg'
+    # filename = 'document.pdf'
 
     send_mail(sender_email, sender_name, password, receiver_emails,
               receiver_names, email_body, filename)
+
+    print('____________________________________')
