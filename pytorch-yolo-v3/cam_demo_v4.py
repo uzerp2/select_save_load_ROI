@@ -15,6 +15,10 @@ import pickle as pkl
 
 from settings import *
 
+from send_email import send_mail
+
+# from send_email import send_mail
+
 
 def get_test_input(input_dim, CUDA):
     img = cv2.imread("imgs/messi.jpg")
@@ -143,6 +147,15 @@ if __name__ == '__main__':
 
     frames = 0
     start = time.time()
+
+    time_start = time.time()
+    people_queue_is_array = []
+    frame_array = []
+
+    for rect_x in rects:
+        people_queue_is_array.append(0)
+        frame_array.append(0)
+
     while cap.isOpened():
 
         ret, frame_v1 = cap.read()
@@ -216,9 +229,18 @@ if __name__ == '__main__':
 
                 ###############################
                 ##
+                people_queue_is = 0
                 for x in output:
                     # objs = [classes[int(x[-1])]
                     print("{:25s} ".format(classes[int(x[-1])]))
+
+                    if classes[int(x[-1])] == 'person':  # 'cup':  # 'person'
+                        people_queue_is = people_queue_is + 1
+
+                index = rects.index(rect_x)
+                # people_queue_is_array[index] = max(people_queue_is, people_queue_is_array[index]
+                people_queue_is_array[index] = people_queue_is
+                frame_array[index] = frame_v1.copy()
 
                 print("###############################")
 
@@ -229,6 +251,42 @@ if __name__ == '__main__':
                 frames += 1
                 print("FPS of the video is {:5.2f}".format(
                     frames / (time.time() - start)))
+
+            if (time.time() - time_start) >= TIME_THAT_QUEUE_IS:
+                time_start = time.time()
+
+                for rect_x in rects:
+                    index = rects.index(rect_x)
+
+                    # file_to_attach =
+                    # NUMBER_OF_PEOPLE_QUEUE_AT_CASH_REGISTER:
+                    if people_queue_is_array[index] >= NUMBER_OF_PEOPLE_THAT_QUEUE_IS:
+                        cv2.imshow("frame1", frame_array[index])
+                        status = cv2.imwrite(
+                            'frame_temp{:n}.png'.format(index), frame_array[index])
+                        print("Image written to file-system : ", status)
+
+                        sender_email = SENDER_EMAIL
+                        sender_name = SENDER_NAME
+                        password = PASSWORD
+
+                        receiver_emails = RECEIVER_EMAILS
+                        receiver_names = RECEIVER_NAMES
+
+                        # Email body
+                        email_html = open('email.html')
+                        email_body = email_html.read()
+
+                        filename = 'frame_temp{:n}.png'.format(index)
+
+                        send_mail(sender_email, sender_name, password, receiver_emails,
+                                  receiver_names, email_body, filename)
+
+                frame_array = []
+                people_queue_is_array = []
+                for rect_x in rects:
+                    people_queue_is_array.append(0)
+                    frame_array.append(0)
 
             cv2.imshow("frame", frame_v1)
 
