@@ -13,10 +13,13 @@ import random
 import argparse
 import pickle as pkl
 
-from settings import *
+# from settings import *
 
 from send_email import send_mail
-import asyncio
+# import asyncio
+
+import configparser
+import json
 
 
 def get_test_input(input_dim, CUDA):
@@ -155,6 +158,14 @@ if __name__ == '__main__':
         people_queue_is_array.append(0)
         frame_array.append(0)
 
+    config = configparser.ConfigParser()
+    config.read('settings.ini')
+
+    default_config = config['DEFAULT']
+    time_that_queue_is = json.loads(default_config['TIME_THAT_QUEUE_IS'])
+    number_of_people_that_queue_is = json.loads(
+        default_config['NUMBER_OF_PEOPLE_THAT_QUEUE_IS'])
+
     while cap.isOpened():
 
         ret, frame_v1 = cap.read()
@@ -251,7 +262,7 @@ if __name__ == '__main__':
                 print("FPS of the video is {:5.2f}".format(
                     frames / (time.time() - start)))
 
-            if (time.time() - time_start) >= TIME_THAT_QUEUE_IS:
+            if (time.time() - time_start) >= time_that_queue_is:
                 time_start = time.time()
 
                 for rect_x in rects:
@@ -259,18 +270,31 @@ if __name__ == '__main__':
 
                     # file_to_attach =
                     # NUMBER_OF_PEOPLE_QUEUE_AT_CASH_REGISTER:
-                    if people_queue_is_array[index] >= NUMBER_OF_PEOPLE_THAT_QUEUE_IS:
+                    if people_queue_is_array[index] >= number_of_people_that_queue_is:
                         cv2.imshow("frame1", frame_array[index])
                         status = cv2.imwrite(
                             'frame_temp{:n}.png'.format(index), frame_array[index])
                         print("Image written to file-system : ", status)
 
-                        sender_email = SENDER_EMAIL
-                        sender_name = SENDER_NAME
-                        password = PASSWORD
+                        config = configparser.ConfigParser()
+                        config.read('settings.ini')
 
-                        receiver_emails = RECEIVER_EMAILS
-                        receiver_names = RECEIVER_NAMES
+                        default_config = config['DEFAULT']
+
+                        sender_email = json.loads(
+                            default_config['SENDER_EMAIL'])
+                        sender_name = json.loads(default_config['SENDER_NAME'])
+                        password = json.loads(default_config['PASSWORD'])
+
+                        receiver_emails = json.loads(
+                            default_config['RECEIVER_EMAILS'])
+                        receiver_names = json.loads(
+                            default_config['RECEIVER_NAMES'])
+
+                        time_that_queue_is = json.loads(
+                            default_config['TIME_THAT_QUEUE_IS'])
+                        number_of_people_that_queue_is = json.loads(
+                            default_config['NUMBER_OF_PEOPLE_THAT_QUEUE_IS'])
 
                         # Email body
                         email_html = open('email.html')

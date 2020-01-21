@@ -6,9 +6,11 @@ from email.mime.multipart import MIMEMultipart  # New line
 from email.mime.base import MIMEBase  # New line
 from email import encoders  # New line
 
-from settings import *
+# from settings import *
 
 from threading import Thread
+import configparser
+import json
 
 
 def threading(f):
@@ -80,13 +82,18 @@ if __name__ == '__main__':
     # receiver_emails = ['uzerp2apple@gmail.com']
     # receiver_names = ['pasha_s_receiver']
 
-    sender_email = SENDER_EMAIL
-    sender_name = SENDER_NAME
-    password = PASSWORD
+    config = configparser.ConfigParser()
+    config.read('settings.ini')
+
+    default_config = config['DEFAULT']
+
+    sender_email = json.loads(default_config['SENDER_EMAIL'])
+    sender_name = json.loads(default_config['SENDER_NAME'])
+    password = json.loads(default_config['PASSWORD'])
     # password = input('Please, type your password:n')
 
-    receiver_emails = RECEIVER_EMAILS
-    receiver_names = RECEIVER_NAMES
+    receiver_emails = json.loads(default_config['RECEIVER_EMAILS'])
+    receiver_names = json.loads(default_config['RECEIVER_NAMES'])
 
     # Email body
     email_html = open('email.html')
