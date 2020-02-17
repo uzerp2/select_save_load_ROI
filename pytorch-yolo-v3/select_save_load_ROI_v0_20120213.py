@@ -1,8 +1,6 @@
 import cv2
 import numpy as np
 
-import argparse
-
 
 def add_pts_to_array(params, x, y):
     global rects
@@ -33,20 +31,7 @@ def draw_rectangles(event, x, y, flags, params):
         add_pts_to_array(params, x, y)
 
 
-def arg_parse():
-
-    parser = argparse.ArgumentParser(description='select save load ROI')
-    parser.add_argument("--video", dest='video',
-                        help="Video to run selection ROI", default=0)
-    parser.add_argument("--width", dest="width",
-                        help="Width  of video",            default=0, type=int)
-
-    return parser.parse_args()
-
-
 if __name__ == '__main__':
-
-    args = arg_parse()
 
     waitTime = 50
 
@@ -55,15 +40,7 @@ if __name__ == '__main__':
 
     rects = []
 
-    # args.video = "C:\\Develop\\Projects\\opencv\\Pytorch\\select_save_load_ROI\\video\\6919\\2020-02-12-14-34-24.mp4"
-    # args.width = 800
-    print(args.video)
-    print(args.width)
-
-    if args.video == 0:
-        cap = cv2.VideoCapture(0)
-    else:
-        cap = cv2.VideoCapture(args.video)
+    cap = cv2.VideoCapture(0)
 
     # Check if the webcam is opened correctly
     if not cap.isOpened():
@@ -73,34 +50,25 @@ if __name__ == '__main__':
     # Bind draw_rectangles function to every mouse event
     cv2.setMouseCallback('Webcam', draw_rectangles, event_params)
 
-    ################################
-    ##
-    ret, frame = cap.read()
-    dim = (frame.shape[1], frame.shape[0])
-    if args.width != 0:
-        scale = args.width/frame.shape[1]
-        dim = (args.width, int(scale*frame.shape[0]))
-
     while True:
         ret, frame = cap.read()
         # img = cv2.resize(frame, None, fx=0.5, fy=0.5,
         #                  interpolation=cv2.INTER_AREA)
 
-        img = cv2.resize(frame, dim, interpolation=cv2.INTER_AREA)
+        img = cv2.resize(frame, None, fx=1, fy=1,
+                         interpolation=cv2.INTER_AREA)
 
         # рисуем текущую область
         if drawing:
             (x0, y0), (x1,
                        y1) = event_params["top_left_pt"], event_params["bottom_right_pt"]
-            # img[y0:y1, x0:x1] = 255 - img[y0:y1, x0:x1]
-            cv2.rectangle(img, (x0, y0), (x1, y1), (0, 255, 0), 2)
+            img[y0:y1, x0:x1] = 255 - img[y0:y1, x0:x1]
 
         # отрисовка областей которые запомнили в массив
         for rect_x in rects:
             (x0, y0), (x1, y1) = (
                 rect_x[0][0], rect_x[0][1]), (rect_x[1][0], rect_x[1][1])
-            # img[y0:y1, x0:x1] = 255 - img[y0:y1, x0:x1]
-            cv2.rectangle(img, (x0, y0), (x1, y1), (0, 255, 0), 2)
+            img[y0:y1, x0:x1] = 255 - img[y0:y1, x0:x1]
 
         cv2.imshow('Webcam', img)
         c = cv2.waitKey(waitTime)

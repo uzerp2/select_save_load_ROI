@@ -5,3 +5,6 @@ setting_roi.bin
 pytorch-yolo-v3/cfg/*
 pytorch-yolo-v3/weights/*
 pytorch-yolo-v3/__pycache__/*
+pytorch-yolo-v3/*.png
+pytorch-yolo-v3/settings.ini
+video/*
